@@ -1,4 +1,7 @@
 #!/usr/bin/ruby
+
+require 'pry'
+
 # TASKS
 # Welcome player + give instructions
 # print board (render method)
@@ -20,6 +23,8 @@ class TowerOfHanoi
 
   attr_accessor :board
 
+  attr_reader :tower_height
+
   def play
     instructions
     take_turns
@@ -29,12 +34,13 @@ class TowerOfHanoi
     puts "Welcome to Tower of Hanoi!"
     puts "Type any key to continue"
     gets
-    tower_height = 0
+    @tower_height = 0
     until tower_height > 2 && tower_height < 10 
       puts "How high would you like your tower to be? Choose a number between 3 and 10."
-      tower_height = gets.chomp.to_i
+      @tower_height = gets.chomp.to_i
     end
-    create_board(tower_height)
+    create_board
+
     render_board
 =begin
     puts "Great! here's your board. Type any key..."
@@ -50,8 +56,7 @@ class TowerOfHanoi
     puts "Enter your move by typing the locations you want to move from and to (1, 2, or 3)"
     gets
 =end
-    puts "If you get tired of playing, type 'q' to quit. Here's your board again. Good Luck!"
-    gets
+    puts "If you get tired of playing, type 'q' to quit. Good luck!\n\n"
 
   end
 
@@ -68,38 +73,103 @@ class TowerOfHanoi
     move = []
     while
       move_from = select
-      break if input_valid?(move_from) == true
+      break if input_valid?(move_from) == true && move_from_valid?(move_from) == true
     end
     while
       move_to = target
-      break if input_valid?(move_to) == true
+      break if input_valid?(move_to) == true && move_to_valid?(move_from, move_to) == true
     end
-    move.push(move_from,move_to)
+    move.push(move_from, move_to)
     return move
   end
 
   def select
     puts "Where would you like to move from?"
-    move_from = gets.chomp.to_i
+    move_from = gets.chomp
+      if move_from.strip.downcase == 'q'
+        exit
+      else
+        move_from = move_from.to_i
+      end
     return move_from
   end
 
   def target
-    puts "And where would you like to move to?"
-    move_to = gets.chomp.to_i
+    puts "Where would you like to move to?"
+    move_to = gets.chomp
+      if move_to.strip.downcase == 'q'
+        exit
+      else
+        move_to = move_to.to_i
+      end
     return move_to
   end
 
-  def create_board(tower_height)
+  def create_board
     tower = []
-    tower_height.downto(1) do |layer|
+    @tower_height.downto(1) do |layer|
       tower << layer
     end
     @board = [tower, [], []]
   end
 
   def render_board
-    p @board
+
+    #rearrange the @board array so that I can easily pop off lines and print to the terminal
+    # so I'm converting from something like this --> [[4,3,2,1],[],[]]
+    # to something like this --> [[1,2,3],[4,0,0],[3,0,0],[2,0,0],[1,0,0]]
+    # or actually something like this --> [[1,nil,nil],[2,nil,nil],[3,nil,nil],[4,nil,nil],[1,2,3]]
+=begin
+    [[3,2],[nil,nil],[1,nil]]
+
+    oo
+    ooo     o
+    1   2   3
+
+    [[2,nil, nil],[3,nil,1],[1,2,3]]
+=end
+    new_board = []
+    print_board = []
+    largest_array_size = 0
+
+    @board.each do |location|
+      if location.length > largest_array_size
+        largest_array_size = location.length
+      end
+    end
+
+    @board.each do |location|
+      new_location = location.dup
+      until new_location.length == largest_array_size
+        new_location << nil
+      end
+      new_board << new_location
+    end
+
+    largest_array_size.times do |i|
+      new_line = []
+      new_board.each do |array|
+        ring = array.pop
+        new_line.push(ring)
+      end
+      print_board.push(new_line)
+    end
+
+    print_board.each do |line|
+      # print the board
+      line.each do |amount|
+        if amount == nil
+          print_value = ""
+        else
+          print_value = "o" * amount
+        end
+        print "#{print_value} \t"
+      end
+      print "\n"
+    end
+
+    puts "1 \t 2 \t 3 \t\n\n"
+
   end
 
   def input_valid?(num)
@@ -110,6 +180,29 @@ class TowerOfHanoi
     end
   end
 
+  def move_from_valid?(move_from)
+    move_from -= 1
+    if @board[move_from].empty?
+      puts "You can't move from there"
+      return false
+    else
+      return true
+    end
+  end
+
+  def move_to_valid?(move_from, move_to)
+    move_from -= 1
+    move_to -= 1
+    if @board[move_to].empty?
+      return true
+    elsif @board[move_from].last > @board[move_to].last
+      puts "You can't move there"
+      return false
+    else
+      return true
+    end
+  end
+
   def move_ring(move)
     move_from = move[0] - 1
     move_to = move[1] - 1
@@ -117,8 +210,12 @@ class TowerOfHanoi
     @board[move_to].push(ring_moving)
   end
 
-  def victory?
-    return false
+  def victory? 
+    if @board[1].length == @tower_height || @board[2].length == @tower_height
+      return true
+    else
+      return false
+    end
   end
 
   def victory_message
