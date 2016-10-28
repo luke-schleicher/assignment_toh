@@ -21,47 +21,127 @@ require 'pry'
 
 class TowerOfHanoi
 
-  attr_accessor(:board, :number_of_moves, :minimum_number_of_moves)
-  attr_reader :tower_height
+  attr_accessor(:board, :number_of_moves, :minimum_number_of_moves, :tower_height)
 
   def initialize
     @number_of_moves = 0
+    @tower_height = 0
   end
 
   def play
-    instructions
+    introduction
     take_turns
   end
 
-  def instructions
+  def introduction
+    welcome
+    create_tower
+    create_board
+    render_board
+    instructions
+  end
+
+  def welcome
     puts "Welcome to Tower of Hanoi!"
-    puts "Type any key to continue"
+    puts "Type any key to continue..."
     gets
-    @tower_height = 0
-    until tower_height > 2 && tower_height < 10 
+  end
+
+  def create_tower
+    until @tower_height > 2 && @tower_height <= 10 
       puts "How high would you like your tower to be? Choose a number between 3 and 10."
       @tower_height = gets.chomp.to_i
     end
     @minimum_number_of_moves = (2**@tower_height) - 1
-    create_board
+  end
 
-    render_board
+  def create_board
+    tower = []
+    @tower_height.downto(1) do |layer|
+      tower << layer
+    end
+    @board = [tower, [], []]
+  end
 
-    puts "Great! here's your board. Type any key..."
-    gets
-    puts "The goal of the game is to move the entire tower of 'o's to another location."
-    gets
-    puts "You can only move the top layer of a tower."
-    gets
-    puts "And you can only move one layer at a time."
-    gets
-    puts "Finally, you cannot put a bigger layer onto a smaller layer of 'o's."
-    gets
-    puts "Enter your move by typing the locations you want to move from and to (1, 2, or 3)"
-    gets
+  def render_board
 
-    puts "If you get tired of playing, type 'q' to quit. Good luck!\n\n"
+    #rearrange the @board array so that I can easily pop off lines and print to the terminal
+    # so I'm converting from something like this --> [[4,3,2,1],[],[]]
+    # to something like this --> [[1,nil,nil],[2,nil,nil],[3,nil,nil],[4,nil,nil]]
 
+    tallest_tower_size = find_tallest_tower
+    printable_board = copy_board_and_add_nils(tallest_tower_size)
+    print_to_cl_board = convert_board_to_print_to_cl_board(tallest_tower_size, printable_board)
+    print_the_board(print_to_cl_board)
+
+  end
+
+  def find_tallest_tower
+    tallest_tower_size = 0
+    @board.each do |location|
+      if location.length > tallest_tower_size
+        tallest_tower_size = location.length
+      end
+    end
+    tallest_tower_size
+  end
+
+  def copy_board_and_add_nils(tallest_tower_size)
+    printable_board = []
+    @board.each do |location|
+      new_location = location.dup
+      until new_location.length == tallest_tower_size
+        new_location << nil
+      end
+      printable_board << new_location
+    end
+    printable_board
+  end
+
+  def convert_board_to_print_to_cl_board(tallest_tower_size, printable_board)
+    print_to_cl_board = []
+    tallest_tower_size.times do |i|
+      new_line = []
+      printable_board.each do |array|
+        ring = array.pop
+        new_line.push(ring)
+      end
+      print_to_cl_board.push(new_line)
+    end
+    print_to_cl_board
+  end
+
+  def print_the_board(print_to_cl_board)
+    print "\n"
+    print_to_cl_board.each do |line|
+      # print the board
+      line.each do |amount|
+        if amount == nil
+          print_value = ""
+        else
+          print_value = "o" * amount
+        end
+        print "#{print_value} \t"
+      end
+      print "\n"
+    end
+    puts "1 \t 2 \t 3 \n\n"
+  end
+
+  def instructions
+    puts "Great! here's your board. Type any key to continue..."
+    gets
+    puts "The goal of the game is to move the entire tower of 'o's to another location..."
+    gets
+    puts "You can only move the top layer of a tower..."
+    gets
+    puts "And you can only move one layer at a time..."
+    gets
+    puts "Finally, you cannot put a bigger layer onto a smaller layer of 'o's..."
+    gets
+    puts "Enter your move by typing the locations you want to move from and to (1, 2, or 3)..."
+    gets
+    puts "If you get tired of playing, type 'q' to quit. Good luck!...\n\n"
   end
 
   def take_turns
@@ -108,66 +188,6 @@ class TowerOfHanoi
         move_to = move_to.to_i
       end
     return move_to
-  end
-
-  def create_board
-    tower = []
-    @tower_height.downto(1) do |layer|
-      tower << layer
-    end
-    @board = [tower, [], []]
-  end
-
-  def render_board
-
-    #rearrange the @board array so that I can easily pop off lines and print to the terminal
-    # so I'm converting from something like this --> [[4,3,2,1],[],[]]
-    # to something like this --> [[1,2,3],[4,0,0],[3,0,0],[2,0,0],[1,0,0]]
-    # to something like this --> [[1,nil,nil],[2,nil,nil],[3,nil,nil],[4,nil,nil]]
-
-    new_board = []
-    print_board = []
-    largest_array_size = 0
-
-    @board.each do |location|
-      if location.length > largest_array_size
-        largest_array_size = location.length
-      end
-    end
-
-    @board.each do |location|
-      new_location = location.dup
-      until new_location.length == largest_array_size
-        new_location << nil
-      end
-      new_board << new_location
-    end
-
-    largest_array_size.times do |i|
-      new_line = []
-      new_board.each do |array|
-        ring = array.pop
-        new_line.push(ring)
-      end
-      print_board.push(new_line)
-    end
-
-    print "\n"
-    print_board.each do |line|
-      # print the board
-      line.each do |amount|
-        if amount == nil
-          print_value = ""
-        else
-          print_value = "o" * amount
-        end
-        print "#{print_value} \t"
-      end
-      print "\n"
-    end
-
-    puts "1 \t\t 2 \t\t 3 \t\n\n"
-
   end
 
   def input_valid?(num)
