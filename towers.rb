@@ -21,9 +21,12 @@ require 'pry'
 
 class TowerOfHanoi
 
-  attr_accessor :board
-
+  attr_accessor(:board, :number_of_moves, :minimum_number_of_moves)
   attr_reader :tower_height
+
+  def initialize
+    @number_of_moves = 0
+  end
 
   def play
     instructions
@@ -39,10 +42,11 @@ class TowerOfHanoi
       puts "How high would you like your tower to be? Choose a number between 3 and 10."
       @tower_height = gets.chomp.to_i
     end
+    @minimum_number_of_moves = (2**@tower_height) - 1
     create_board
 
     render_board
-=begin
+
     puts "Great! here's your board. Type any key..."
     gets
     puts "The goal of the game is to move the entire tower of 'o's to another location."
@@ -55,7 +59,7 @@ class TowerOfHanoi
     gets
     puts "Enter your move by typing the locations you want to move from and to (1, 2, or 3)"
     gets
-=end
+
     puts "If you get tired of playing, type 'q' to quit. Good luck!\n\n"
 
   end
@@ -64,6 +68,7 @@ class TowerOfHanoi
     until victory? == true
       render_board
       move = player_choice
+      @number_of_moves += 1
       move_ring(move)
     end
     victory_message
@@ -118,16 +123,8 @@ class TowerOfHanoi
     #rearrange the @board array so that I can easily pop off lines and print to the terminal
     # so I'm converting from something like this --> [[4,3,2,1],[],[]]
     # to something like this --> [[1,2,3],[4,0,0],[3,0,0],[2,0,0],[1,0,0]]
-    # or actually something like this --> [[1,nil,nil],[2,nil,nil],[3,nil,nil],[4,nil,nil],[1,2,3]]
-=begin
-    [[3,2],[nil,nil],[1,nil]]
+    # to something like this --> [[1,nil,nil],[2,nil,nil],[3,nil,nil],[4,nil,nil]]
 
-    oo
-    ooo     o
-    1   2   3
-
-    [[2,nil, nil],[3,nil,1],[1,2,3]]
-=end
     new_board = []
     print_board = []
     largest_array_size = 0
@@ -155,6 +152,7 @@ class TowerOfHanoi
       print_board.push(new_line)
     end
 
+    print "\n"
     print_board.each do |line|
       # print the board
       line.each do |amount|
@@ -222,6 +220,8 @@ class TowerOfHanoi
     puts "Congratulations, you won!"
     render_board
     gets
+    puts "You solved it in #{@number_of_moves} moves"
+    puts "The minimum number of moves was #{@minimum_number_of_moves}"
     exit
   end
 
